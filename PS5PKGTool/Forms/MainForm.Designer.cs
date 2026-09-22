@@ -22,6 +22,7 @@ partial class MainForm
     private ToolStripMenuItem menuRecent = null!;
     private DarkUI.Controls.DarkToolStripSeparator menuHelpSeparator = null!;
     private ToolStripMenuItem menuHelpCheckUpdate = null!;
+    private ToolStripMenuItem menuHelpCheckUpdatesOnStartup = null!;
         private ToolStripMenuItem menuHelpKofi = null!;
         private ToolStripMenuItem menuHelpPayPal = null!;
     private DarkUI.Controls.DarkContextMenu contextLibrary = null!;
@@ -416,6 +417,7 @@ partial class MainForm
         menuAbout = new ToolStripMenuItem();
         menuHelpSeparator = new DarkUI.Controls.DarkToolStripSeparator();
         menuHelpCheckUpdate = new ToolStripMenuItem();
+        menuHelpCheckUpdatesOnStartup = new ToolStripMenuItem();
         menuHelpKofi = new ToolStripMenuItem();
         menuHelpPayPal = new ToolStripMenuItem();
         contextLibrary = new DarkUI.Controls.DarkContextMenu();
@@ -1006,7 +1008,7 @@ partial class MainForm
         // menuHelp
         // 
         menuHelp.BackColor = Color.FromArgb(60, 63, 65);
-        menuHelp.DropDownItems.AddRange(new ToolStripItem[] { menuAbout, menuHelpSeparator, menuHelpCheckUpdate, menuHelpKofi, menuHelpPayPal });
+        menuHelp.DropDownItems.AddRange(new ToolStripItem[] { menuAbout, menuHelpSeparator, menuHelpCheckUpdate, menuHelpCheckUpdatesOnStartup, menuHelpKofi, menuHelpPayPal });
         menuHelp.ForeColor = Color.FromArgb(220, 220, 220);
         menuHelp.Name = "menuHelp";
         menuHelp.Size = new Size(44, 20);
@@ -1030,6 +1032,14 @@ partial class MainForm
         menuHelpCheckUpdate.Size = new Size(180, 22);
         menuHelpCheckUpdate.Text = "Check for Updates...";
         menuHelpCheckUpdate.Click += menuHelpCheckUpdate_Click;
+        // 
+        // menuHelpCheckUpdatesOnStartup
+        // 
+        menuHelpCheckUpdatesOnStartup.CheckOnClick = true;
+        menuHelpCheckUpdatesOnStartup.Name = "menuHelpCheckUpdatesOnStartup";
+        menuHelpCheckUpdatesOnStartup.Size = new Size(180, 22);
+        menuHelpCheckUpdatesOnStartup.Text = "Check for updates on startup";
+        menuHelpCheckUpdatesOnStartup.Click += menuHelpCheckUpdatesOnStartup_Click;
         // 
         // menuHelpKofi
         // 

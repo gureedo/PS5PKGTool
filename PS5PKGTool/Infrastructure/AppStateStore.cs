@@ -51,6 +51,9 @@ public sealed class AppSettings
     public string RenameFormat { get; set; } = "{TITLE} [{TITLE_ID}]";
     public bool LogAutoScroll { get; set; } = true;
 
+    /// <summary>Check GitHub for a newer release when the app starts.</summary>
+    public bool CheckUpdatesOnStartup { get; set; } = true;
+
     // Files & preview
     public int MaxPreviewMb { get; set; } = 16;
     public int HexPageKb { get; set; } = 16;

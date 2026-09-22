@@ -102,14 +102,7 @@ public partial class MainForm : DarkForm
         _pendingExternalPath = externalPath;
     }
 
-    private static string AppVersion()
-    {
-        Version? version = typeof(MainForm).Assembly.GetName().Version;
-        if (version is null) return "1.0.0";
-        return version.Build >= 0
-            ? $"{version.Major}.{version.Minor}.{version.Build}"
-            : $"{version.Major}.{version.Minor}";
-    }
+    private static string AppVersion() => UpdateChecker.AppVersion();
 
     private async void MainForm_Shown(object? sender, EventArgs e)
     {
@@ -174,6 +167,11 @@ public partial class MainForm : DarkForm
         // opening each dump.
         _dumpSizeCancellation = new CancellationTokenSource();
         _ = ComputeMissingDumpSizesAsync(_dumpSizeCancellation.Token);
+
+        // Mirror PkgViewer: check for a newer release once, only speaking up when one exists.
+        menuHelpCheckUpdatesOnStartup.Checked = _settings.CheckUpdatesOnStartup;
+        if (_settings.CheckUpdatesOnStartup)
+            _ = CheckForUpdatesAsync(manual: false);
     }
 
     /// <summary>
@@ -669,8 +667,6 @@ public partial class MainForm : DarkForm
         form.ShowDialog(this);
     }
 
-    private const string RepositoryUrl = "https://github.com/pearlxcore/PS5PkgTool";
-    private const string LatestReleaseApiUrl = "https://api.github.com/repos/pearlxcore/PS5PkgTool/releases/latest";
     private const string KoFiUrl = "https://ko-fi.com/R6R524N7X";
     private const string PayPalUrl = "https://www.paypal.com/paypalme/pearlxcoree";
 
@@ -690,52 +686,54 @@ public partial class MainForm : DarkForm
 
     private void menuHelpPayPal_Click(object? sender, EventArgs e) => OpenExternalUrl(PayPalUrl);
 
-    private async void menuHelpCheckUpdate_Click(object? sender, EventArgs e)
+    private void menuHelpCheckUpdate_Click(object? sender, EventArgs e) => _ = CheckForUpdatesAsync(manual: true);
+
+    private void menuHelpCheckUpdatesOnStartup_Click(object? sender, EventArgs e)
+    {
+        _settings.CheckUpdatesOnStartup = menuHelpCheckUpdatesOnStartup.Checked;
+        SaveSettingsQuietly();
+    }
+
+    /// <summary>
+    /// Checks GitHub for a newer release. A manual check always reports the outcome; the automatic
+    /// startup check only speaks up when a newer version exists.
+    /// </summary>
+    private async Task CheckForUpdatesAsync(bool manual)
     {
         try
         {
-            statusLabel.Text = "Checking for updates...";
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("PS5PKGTool");
-            string json = await client.GetStringAsync(LatestReleaseApiUrl);
-            using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(json);
-            string tag = document.RootElement.TryGetProperty("tag_name", out System.Text.Json.JsonElement tagElement)
-                ? tagElement.GetString() ?? string.Empty
-                : string.Empty;
-            string page = document.RootElement.TryGetProperty("html_url", out System.Text.Json.JsonElement urlElement)
-                ? urlElement.GetString() ?? RepositoryUrl
-                : RepositoryUrl;
-            string current = AppVersion();
-            string latest = tag.TrimStart('v', 'V').Trim();
-            if (latest.Length == 0)
+            if (manual) statusLabel.Text = "Checking for updates...";
+            Logger.Info($"Update check start (manual={manual}).");
+            UpdateCheck? check = await UpdateChecker.CheckAsync().ConfigureAwait(true);
+            if (check is null)
             {
-                AppDialog.ShowInformation("The latest release has no version tag.", "Check for updates");
+                if (manual)
+                    AppDialog.ShowInformation("No published releases were found.", "Check for updates");
                 return;
             }
-            int comparison = CompareVersions(current, latest) ?? 0;
-            if (comparison < 0)
+
+            string current = AppVersion();
+            if (!check.IsNewerThan(current))
             {
-                if (AppDialog.ShowInformation(
-                        $"A newer version is available.\n\nInstalled: {current}\nLatest: {latest}\n\nOpen the download page?",
-                        "Check for updates", DarkDialogButton.YesNo) == DialogResult.Yes)
-                    OpenExternalUrl(page);
+                Logger.Info($"Update check: up to date (running {current}, latest {check.Latest}).");
+                if (manual) AppDialog.ShowInformation("PS5 PKG Tool is up to date.", "Check for updates");
+                return;
             }
-            else
-            {
-                AppDialog.ShowInformation("PS5 PKG Tool is up to date.", "Check for updates");
-            }
+
+            Logger.Info($"Update check: newer version available ({check.Latest}, running {current}).");
+            using var dialog = new UpdateAvailableForm(check, current);
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+                OpenExternalUrl(dialog.PageUrl);
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or
+                                   System.Text.Json.JsonException)
         {
-            AppDialog.ShowInformation("PS5 PKG Tool is up to date.", "Check for updates");
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
-        {
-            AppDialog.ShowError("Could not check for updates.\n\n" + ex.Message, "Check for updates");
+            Logger.Exception("Update check", ex);
+            if (manual) AppDialog.ShowError("Could not check for updates.\n\n" + ex.Message, "Check for updates");
         }
         finally
         {
-            statusLabel.Text = "Ready";
+            if (manual) statusLabel.Text = "Ready";
         }
     }
 
