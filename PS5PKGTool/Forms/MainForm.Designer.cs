@@ -2992,10 +2992,10 @@ partial class MainForm
         // 
         // btnExecHash
         // 
-        btnExecHash.Location = new Point(124, 58);
+        btnExecHash.Location = new Point(352, 58);
         btnExecHash.Name = "btnExecHash";
         btnExecHash.Size = new Size(130, 26);
-        btnExecHash.TabIndex = 1;
+        btnExecHash.TabIndex = 3;
         btnExecHash.Text = "SHA-256...";
         btnExecHash.Click += btnExecHash_Click;
         // 
