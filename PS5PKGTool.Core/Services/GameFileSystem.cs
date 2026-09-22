@@ -115,6 +115,23 @@ public static class GameFileSystem
         private readonly SonyEnginePackageAccess? _engine;
         private readonly Dictionary<string, (uint Id, long Size)>? _cntEntries;
 
+        // The inner image's super-root carries the PFS's own flat-path and AFID index tables next to
+        // the "uroot" content directory. They are filesystem structure rather than game content, so
+        // they stay out of Files, which is what the browsers and extractors iterate; the reference
+        // reader presents a package the same way. Direct reads still resolve them through the engine
+        // (FileExists/OpenRead use _engine.TryFindFile), and the engine's own listings keep showing
+        // them. Their names are reserved by the format and only ever appear as root-level entries,
+        // so a name match at the root cannot hide real content that lives under uroot.
+        private static readonly HashSet<string> PfsInternalTables = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "inode_flat_path_table",
+            "apr_flat_path_table",
+            "afid_to_ino_table",
+        };
+
+        private static bool IsPfsInternalTable(string relativePath)
+            => !relativePath.Contains('/') && PfsInternalTables.Contains(relativePath);
+
         public SonyPackageGameFileSystem(Ps5GameInfo game)
         {
             _path = Path.GetFullPath(game.RootPath);
@@ -153,7 +170,7 @@ public static class GameFileSystem
                 foreach (ProsperoInnerPfsReader.Entry file in innerFiles)
                 {
                     string relative = NormalizePath(engine.ToRelativePath(file));
-                    if (relative.Length > 0) records[relative] = (file.Size, "PFS");
+                    if (relative.Length > 0 && !IsPfsInternalTable(relative)) records[relative] = (file.Size, "PFS");
                 }
                 foreach (KeyValuePair<string, (uint Id, long Size)> pair in _cntEntries)
                     records.TryAdd(pair.Key, (pair.Value.Size, "CNT"));
