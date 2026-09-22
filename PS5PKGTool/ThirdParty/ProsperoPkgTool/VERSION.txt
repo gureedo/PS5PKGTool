@@ -5,4 +5,4 @@ Vendored managed library consumed by PS5PKGTool.Core.
 Source project: C:\Users\User\source\repos\ProsperoPkgTool
 Built: 2026-09-22 (Release, local working tree; sparse-fidx-v1 reader for Sony's wrapped stored spans and sparse pages)
 Target: net10.0
-SHA-256 (ProsperoPkgTool.dll): 417EAB3C164743DBE35282990E41ED565F8ADA1974941F6187E65BF9482DB7B7
+SHA-256 (ProsperoPkgTool.dll): A1FD564DDAC86081C313CF2DBA4F43341D1495DFCC876D336B2E3A9FB7139282
