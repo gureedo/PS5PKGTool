@@ -1,0 +1,3 @@
+[submodule "DarkUI"]
+	path = DarkUI
+	url = https://github.com/pearlxcore/DarkUI
