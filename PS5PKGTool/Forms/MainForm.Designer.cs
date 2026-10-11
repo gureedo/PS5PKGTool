@@ -4286,7 +4286,7 @@ partial class MainForm
         // tasksLayout
         // 
         tasksLayout.ColumnCount = 14;
-        tasksLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80F));
+        tasksLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86F));
         tasksLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86F));
         tasksLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86F));
         tasksLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 86F));
@@ -4327,10 +4327,10 @@ partial class MainForm
         // chkTaskAutoStart
         // 
         chkTaskAutoStart.Anchor = AnchorStyles.Left;
-        chkTaskAutoStart.AutoSize = true;
+        chkTaskAutoStart.AutoSize = false;
         chkTaskAutoStart.Location = new Point(3, 9);
         chkTaskAutoStart.Name = "chkTaskAutoStart";
-        chkTaskAutoStart.Size = new Size(74, 19);
+        chkTaskAutoStart.Size = new Size(86, 19);
         chkTaskAutoStart.TabIndex = 0;
         chkTaskAutoStart.Text = "Run queue";
         chkTaskAutoStart.CheckedChanged += chkTaskAutoStart_CheckedChanged;
@@ -4705,7 +4705,7 @@ partial class MainForm
         taskDetailLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18F));
         taskDetailLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         taskDetailLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-        taskDetailLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
+        taskDetailLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
         taskDetailLayout.Size = new Size(1368, 137);
         taskDetailLayout.TabIndex = 0;
         // 
@@ -4794,7 +4794,7 @@ partial class MainForm
         taskDetailLayout.SetColumnSpan(btnTaskDiagnostic, 2);
         btnTaskDiagnostic.Location = new Point(13, 108);
         btnTaskDiagnostic.Name = "btnTaskDiagnostic";
-        btnTaskDiagnostic.Size = new Size(160, 22);
+        btnTaskDiagnostic.Size = new Size(160, 28);
         btnTaskDiagnostic.TabIndex = 8;
         btnTaskDiagnostic.Text = "Diagnostic...";
         btnTaskDiagnostic.Click += btnTaskDiagnostic_Click;
