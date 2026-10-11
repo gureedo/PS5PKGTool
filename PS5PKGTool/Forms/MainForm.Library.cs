@@ -130,7 +130,7 @@ public partial class MainForm
         ApplyLibraryColumnVisibility();
         RestoreLibraryColumnLayout();
         LoadLibrarySortKeys();
-        SetGroupBy(view.GroupBy);
+        SetGroupBy(view.GroupBy, persist: false);
         ApplyFilter();
         SaveSettingsQuietly();
         statusLabel.Text = $"Applied view '{view.Name}'.";
@@ -373,13 +373,20 @@ public partial class MainForm
         statusLabel.Text = $"Removed {removed:N0} missing item(s).";
     }
 
-    private void SetGroupBy(string key)
+    private void SetGroupBy(string key, bool persist = true)
     {
         _libraryGroupBy = key;
         foreach ((ToolStripMenuItem item, string itemKey) in _groupItems)
             item.Checked = string.Equals(itemKey, key, StringComparison.Ordinal);
         SyncFilterGroupCombo();
         ApplyFilter();
+        // Remember the grouping across restarts, but only for direct user choices (menu / combo).
+        // Applying a saved view keeps the view's own grouping without overwriting the default.
+        if (persist && !string.Equals(_settings.DefaultGroupBy, key, StringComparison.Ordinal))
+        {
+            _settings.DefaultGroupBy = key;
+            SaveSettingsQuietly();
+        }
         statusLabel.Text = key.Length == 0 ? "Grouping disabled." : $"Grouped by {GroupLabel(key)}.";
     }
 
