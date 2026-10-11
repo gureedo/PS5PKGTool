@@ -1,5 +1,6 @@
 using PS5PKGTool.Core.Models;
 using PS5PKGTool.Core.Parsers;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace PS5PKGTool.Core.Services;
@@ -9,6 +10,8 @@ public sealed class Ps5ScanProgress
     public int Processed { get; init; }
     public int Total { get; init; }
     public string CurrentPath { get; init; } = string.Empty;
+    /// <summary>True while the source discovery walk runs (Total is not yet known).</summary>
+    public bool IsDiscovery { get; init; }
 }
 
 public sealed class Ps5ScanResult
@@ -40,13 +43,25 @@ public sealed class Ps5LibraryScanner
         var ffpfscPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var filesystemImagePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var ffpkgPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Report the current directory during discovery, throttled so the UI thread is never flooded
+        // (the walk can visit tens of thousands of directories before the first source is read).
+        var discoveryWatch = Stopwatch.StartNew();
+        long lastDiscoveryReport = -1000;
+        void ReportDiscovery(string directory)
+        {
+            long now = discoveryWatch.ElapsedMilliseconds;
+            if (now - lastDiscoveryReport < 250) return;
+            lastDiscoveryReport = now;
+            progress?.Report(new Ps5ScanProgress { IsDiscovery = true, CurrentPath = directory });
+        }
+
         foreach (string folder in libraryFolders.Where(value => !string.IsNullOrWhiteSpace(value)))
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 // One traversal per folder; every candidate kind is classified from the same walk.
-                Ps5DumpLocator.LocatedSources located = _locator.FindAll(folder, recursive, cancellationToken);
+                Ps5DumpLocator.LocatedSources located = _locator.FindAll(folder, recursive, cancellationToken, ReportDiscovery);
                 foreach (string path in located.ParamFiles) paramPaths.Add(path);
                 foreach (string path in located.Packages) packagePaths.Add(path);
                 foreach (string path in located.Ffpfsc) ffpfscPaths.Add(path);

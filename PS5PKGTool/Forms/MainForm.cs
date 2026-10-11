@@ -431,8 +431,20 @@ public partial class MainForm : DarkForm
         // the newer scan's busy state when it finishes.
         int generation = ++_scanGeneration;
         SetScanning(true);
+        statusLabel.Text = "Scanning for PS5 dumps, packages, and filesystem images...";
         var progress = new Progress<Ps5ScanProgress>(value =>
         {
+            if (value.IsDiscovery)
+            {
+                // Discovery walk: show the directory being scanned so a long walk never looks idle.
+                // Trim a long path so it cannot push the game count off the status bar.
+                string path = value.CurrentPath;
+                if (path.Length > 100) path = "..." + path[^100..];
+                statusLabel.Text = path.Length == 0
+                    ? "Scanning for PS5 dumps, packages, and filesystem images..."
+                    : $"Scanning {path}";
+                return;
+            }
             // The final report has Processed == Total (and no current path); do not show N+1 of N.
             statusLabel.Text = value.Total == 0
                 ? "Searching for PS5 dumps, packages, and filesystem images..."
@@ -496,13 +508,16 @@ public partial class MainForm : DarkForm
     private void UpdateOperationState()
     {
         bool idle = !_isScanning && !_isFileBusy;
+        bool tasksRunning = _taskQueue.Tasks.Any(task => task.Status is PackageTaskStatus.Running or PackageTaskStatus.Queued);
+        // The status-bar marquee runs whenever the app is doing anything that blocks or backgrounds work.
+        statusBusy.Visible = !idle || tasksRunning;
         menuAddFolder.Enabled = idle;
         menuOpenDump.Enabled = idle;
         menuOpenPackage.Enabled = idle;
         menuRefresh.Enabled = idle;
         menuSettings.Enabled = idle;
         btnImageRun.Enabled = idle && cboImageAction.SelectedItem is not null;
-        btnImageCancel.Enabled = _taskQueue.Tasks.Any(task => task.Status is PackageTaskStatus.Running or PackageTaskStatus.Queued);
+        btnImageCancel.Enabled = tasksRunning;
 
         btnFileCancel.Enabled = _isFileBusy;
     }

@@ -214,6 +214,7 @@ public partial class MainForm
         if (!_taskRefreshPending || IsDisposed) return;
         _taskRefreshPending = false;
         RefreshTaskGrid();
+        UpdateOperationState();
     }
 
     private void RefreshTaskGrid()

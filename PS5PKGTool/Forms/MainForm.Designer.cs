@@ -380,10 +380,11 @@ partial class MainForm
     private DarkUI.Controls.DarkCheckBox chkImageAdvancedOptions = null!;
     private DarkUI.Controls.DarkLabel lblImageTemp = null!;
     private SaveFileDialog imageSaveDialog = null!;
-    private DarkUI.Controls.DarkStatusStrip statusMain = null!;
-    private DarkUI.Controls.DarkToolStripStatusLabel statusLabel = null!;
-    private DarkUI.Controls.DarkToolStripStatusLabel statusSpring = null!;
-    private DarkUI.Controls.DarkToolStripStatusLabel statusCount = null!;
+        private DarkUI.Controls.DarkStatusStrip statusMain = null!;
+        private DarkUI.Controls.DarkToolStripStatusLabel statusLabel = null!;
+        private DarkUI.Controls.DarkToolStripProgressBar statusBusy = null!;
+        private DarkUI.Controls.DarkToolStripStatusLabel statusSpring = null!;
+        private DarkUI.Controls.DarkToolStripStatusLabel statusCount = null!;
     private FolderBrowserDialog folderBrowserDialog = null!;
     private OpenFileDialog packageOpenDialog = null!;
     private OpenFileDialog sourceImageOpenDialog = null!;
@@ -776,6 +777,7 @@ partial class MainForm
         trophyCsvSaveDialog = new SaveFileDialog();
         statusMain = new DarkUI.Controls.DarkStatusStrip();
         statusLabel = new DarkUI.Controls.DarkToolStripStatusLabel();
+        statusBusy = new DarkUI.Controls.DarkToolStripProgressBar();
         statusSpring = new DarkUI.Controls.DarkToolStripStatusLabel();
         statusCount = new DarkUI.Controls.DarkToolStripStatusLabel();
         folderBrowserDialog = new FolderBrowserDialog();
@@ -4881,7 +4883,7 @@ partial class MainForm
         // 
         // statusMain
         // 
-        statusMain.Items.AddRange(new ToolStripItem[] { statusLabel, statusSpring, statusCount });
+        statusMain.Items.AddRange(new ToolStripItem[] { statusBusy, statusLabel, statusSpring, statusCount });
         statusMain.Location = new Point(0, 851);
         statusMain.Name = "statusMain";
         statusMain.Padding = new Padding(0, 4, 0, 4);
@@ -4894,6 +4896,15 @@ partial class MainForm
         statusLabel.Name = "statusLabel";
         statusLabel.Size = new Size(39, 17);
         statusLabel.Text = "Ready";
+        // 
+        // statusBusy
+        // 
+        statusBusy.Marquee = true;
+        statusBusy.MarqueeAnimationSpeed = 30;
+        statusBusy.Margin = new Padding(6, 3, 6, 3);
+        statusBusy.Name = "statusBusy";
+        statusBusy.Size = new Size(120, 14);
+        statusBusy.Visible = false;
         // 
         // statusSpring
         // 

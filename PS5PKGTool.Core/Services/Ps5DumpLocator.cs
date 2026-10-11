@@ -14,10 +14,13 @@ public sealed class Ps5DumpLocator
 
     /// <summary>
     /// Enumerates <paramref name="selectedPath"/> once and classifies every file by extension
-    /// (plus <c>sce_sys/param.json</c> loose dumps). Replaces the per-extension walks so a large
-    /// library tree is traversed a single time.
+    /// (plus <c>sce_sys/param.json</c> loose dumps). The walk is pruned at each loose-dump root:
+    /// a directory holding <c>sce_sys/param.json</c> is a game dump whose content can never itself
+    /// be a source, so it is recorded and not descended into (a dump holds tens of thousands of
+    /// files). <paramref name="onDirectory"/> is invoked for each directory visited, unthrottled.
     /// </summary>
-    public LocatedSources FindAll(string selectedPath, bool recursive, CancellationToken cancellationToken = default)
+    public LocatedSources FindAll(string selectedPath, bool recursive, CancellationToken cancellationToken = default,
+        Action<string>? onDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(selectedPath);
         var found = new LocatedSources();
@@ -41,22 +44,43 @@ public sealed class Ps5DumpLocator
 
         if (!Directory.Exists(selectedPath)) return found;
 
-        // A dump root is identified by sce_sys/param.json directly under it; check this explicitly
-        // so non-recursive scans still pick up a dump passed as the selected folder.
-        string directParam = Path.Combine(selectedPath, "sce_sys", "param.json");
-        if (File.Exists(directParam)) found.ParamFiles.Add(Path.GetFullPath(directParam));
-
         var options = new EnumerationOptions
         {
-            RecurseSubdirectories = recursive,
             IgnoreInaccessible = true,
             AttributesToSkip = FileAttributes.ReparsePoint,
             MatchCasing = MatchCasing.CaseInsensitive
         };
-        foreach (string path in Directory.EnumerateFiles(selectedPath, "*", options))
+        var pending = new Stack<string>();
+        pending.Push(Path.GetFullPath(selectedPath));
+        while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Classify(Path.GetFullPath(path), found);
+            string directory = pending.Pop();
+            onDirectory?.Invoke(directory);
+
+            // A dump root is identified by sce_sys/param.json directly under it. Record it and stop:
+            // the dump content below it cannot hold another source worth walking.
+            string dumpParam = Path.Combine(directory, "sce_sys", "param.json");
+            if (File.Exists(dumpParam))
+            {
+                found.ParamFiles.Add(Path.GetFullPath(dumpParam));
+                continue;
+            }
+
+            // One directory read per directory (attributes come from the scan, so classifying a file
+            // or a subdirectory costs no extra I/O).
+            foreach (FileSystemInfo entry in new DirectoryInfo(directory).EnumerateFileSystemInfos("*", options))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if ((entry.Attributes & FileAttributes.Directory) != 0)
+                {
+                    if (recursive && !IsScratchDirectory(entry.Name)) pending.Push(entry.FullName);
+                }
+                else
+                {
+                    Classify(entry.FullName, found);
+                }
+            }
         }
 
         Normalize(found);
@@ -80,6 +104,17 @@ public sealed class Ps5DumpLocator
         else if (extension.Equals(".exfat", StringComparison.OrdinalIgnoreCase)) found.FilesystemImages.Add(fullPath);
         else if (extension.Equals(".ffpkg", StringComparison.OrdinalIgnoreCase)) found.Ffpkg.Add(fullPath);
     }
+
+    /// <summary>
+    /// True for a directory the application itself creates as scratch space: image/convert staging
+    /// (<c>PS5PKGTool-image-&lt;guid&gt;</c>, <c>PS5PKGTool\pkg-image</c>, <c>PS5PKGTool\convert</c>),
+    /// exFAT/FFPKG edit workspaces (<c>.PS5PKGTool-exfat-edit-*</c>, <c>.PS5PKGTool-ffpkg-edit-*</c>)
+    /// and preview output. When the workspace sits inside a library folder these would otherwise be
+    /// walked as if they were game content.
+    /// </summary>
+    internal static bool IsScratchDirectory(string name) =>
+        name.StartsWith("PS5PKGTool", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith(".PS5PKGTool", StringComparison.OrdinalIgnoreCase);
 
     private static void Normalize(LocatedSources found)
     {
