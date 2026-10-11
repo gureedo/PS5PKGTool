@@ -6,7 +6,6 @@ partial class TextReportForm
 {
     private System.ComponentModel.IContainer? components = null;
     private DarkUI.Controls.DarkRichTextBox txtReport = null!;
-    private DarkUI.Controls.DarkButton btnClose = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -18,7 +17,6 @@ partial class TextReportForm
     {
         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TextReportForm));
         txtReport = new DarkUI.Controls.DarkRichTextBox();
-        btnClose = new DarkUI.Controls.DarkButton();
         SuspendLayout();
         // 
         // txtReport
@@ -29,30 +27,20 @@ partial class TextReportForm
         txtReport.Location = new Point(0, 0);
         txtReport.Name = "txtReport";
         txtReport.ReadOnly = true;
-        txtReport.Size = new Size(760, 428);
+        txtReport.SelectionColor = Color.Gainsboro;
+        txtReport.SelectionFont = new Font("Consolas", 9F);
+        txtReport.Size = new Size(760, 460);
         txtReport.TabIndex = 0;
+        txtReport.TextPadding = new Padding(3);
         txtReport.WordWrap = false;
-        // 
-        // btnClose
-        // 
-        btnClose.DialogResult = DialogResult.OK;
-        btnClose.Dock = DockStyle.Bottom;
-        btnClose.Location = new Point(0, 428);
-        btnClose.Name = "btnClose";
-        btnClose.Size = new Size(760, 32);
-        btnClose.TabIndex = 1;
-        btnClose.Text = "Close";
         // 
         // TextReportForm
         // 
-        AcceptButton = btnClose;
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(60, 63, 65);
-        CancelButton = btnClose;
         ClientSize = new Size(760, 460);
         Controls.Add(txtReport);
-        Controls.Add(btnClose);
         MinimizeBox = false;
         MinimumSize = new Size(520, 320);
         Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
