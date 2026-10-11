@@ -68,6 +68,7 @@ partial class SettingsForm
     private DarkUI.Controls.DarkTextBox txtWorkspace = null!;
     private DarkUI.Controls.DarkButton btnBrowseWorkspace = null!;
     private DarkUI.Controls.DarkLabel lblWorkspaceHint = null!;
+    private DarkUI.Controls.DarkLabel lblWorkspaceFree = null!;
     private DarkUI.Controls.DarkLabel lblDefaultBackend = null!;
     private DarkUI.Controls.DarkComboBox cboDefaultBackend = null!;
     private DarkUI.Controls.DarkLabel lblPasscode = null!;
@@ -168,6 +169,7 @@ partial class SettingsForm
         txtWorkspace = new DarkUI.Controls.DarkTextBox();
         btnBrowseWorkspace = new DarkUI.Controls.DarkButton();
         lblWorkspaceHint = new DarkUI.Controls.DarkLabel();
+        lblWorkspaceFree = new DarkUI.Controls.DarkLabel();
         lblDefaultBackend = new DarkUI.Controls.DarkLabel();
         cboDefaultBackend = new DarkUI.Controls.DarkComboBox();
         lblPasscode = new DarkUI.Controls.DarkLabel();
@@ -223,7 +225,7 @@ partial class SettingsForm
         tabsSettings.Location = new Point(12, 12);
         tabsSettings.Name = "tabsSettings";
         tabsSettings.SelectedIndex = 0;
-        tabsSettings.Size = new Size(696, 392);
+        tabsSettings.Size = new Size(986, 392);
         tabsSettings.TabIndex = 0;
         // 
         // tabLibrary
@@ -698,6 +700,7 @@ partial class SettingsForm
         tabPaths.Controls.Add(txtWorkspace);
         tabPaths.Controls.Add(btnBrowseWorkspace);
         tabPaths.Controls.Add(lblWorkspaceHint);
+        tabPaths.Controls.Add(lblWorkspaceFree);
         tabPaths.Controls.Add(lblDefaultBackend);
         tabPaths.Controls.Add(cboDefaultBackend);
         tabPaths.Controls.Add(lblPasscode);
@@ -767,6 +770,7 @@ partial class SettingsForm
         btnBrowseWorkspace.TabIndex = 6;
         btnBrowseWorkspace.Text = "Browse...";
         btnBrowseWorkspace.Click += btnBrowseWorkspace_Click;
+        txtWorkspace.TextChanged += txtWorkspace_TextChanged;
         // 
         // lblWorkspaceHint
         // 
@@ -775,6 +779,12 @@ partial class SettingsForm
         lblWorkspaceHint.Size = new Size(470, 15);
         lblWorkspaceHint.TabIndex = 7;
         lblWorkspaceHint.Text = "Scratch folder for image conversions and package builds. Blank uses the system temp folder.";
+        // 
+        // lblWorkspaceFree
+        // 
+        lblWorkspaceFree.Location = new Point(196, 130);
+        lblWorkspaceFree.Name = "lblWorkspaceFree";
+        lblWorkspaceFree.Size = new Size(470, 15);
         // 
         // lblDefaultBackend
         // 
@@ -991,7 +1001,7 @@ partial class SettingsForm
         // btnSave
         // 
         btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-        btnSave.Location = new Point(478, 416);
+        btnSave.Location = new Point(768, 416);
         btnSave.Name = "btnSave";
         btnSave.Size = new Size(110, 32);
         btnSave.TabIndex = 1;
@@ -1002,7 +1012,7 @@ partial class SettingsForm
         // 
         btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnCancel.DialogResult = DialogResult.Cancel;
-        btnCancel.Location = new Point(598, 416);
+        btnCancel.Location = new Point(888, 416);
         btnCancel.Name = "btnCancel";
         btnCancel.Size = new Size(110, 32);
         btnCancel.TabIndex = 2;
@@ -1015,7 +1025,7 @@ partial class SettingsForm
         AutoScaleMode = AutoScaleMode.Font;
         BackColor = Color.FromArgb(60, 63, 65);
         CancelButton = btnCancel;
-        ClientSize = new Size(720, 460);
+        ClientSize = new Size(1010, 460);
         Controls.Add(btnCancel);
         Controls.Add(btnSave);
         Controls.Add(tabsSettings);

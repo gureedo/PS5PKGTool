@@ -104,6 +104,7 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
             _loading = false;
         }
         UpdateRenameFeedback();
+        UpdatePathFreeSpace();
     }
 
     private void ApplyControlsToDraft()
@@ -150,9 +151,90 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
             return false;
         }
 
+        if (!TryValidateDirectory(txtOutputDirectory.Text, "output", out string? outputError))
+        {
+            error = outputError;
+            tabsSettings.SelectedTab = tabPaths;
+            txtOutputDirectory.Focus();
+            return false;
+        }
+
+        if (!TryValidateDirectory(txtWorkspace.Text, "workspace", out string? workspaceError))
+        {
+            error = workspaceError;
+            tabsSettings.SelectedTab = tabPaths;
+            txtWorkspace.Focus();
+            return false;
+        }
+
         ApplyControlsToDraft();
         error = null;
         return true;
+    }
+
+    /// <summary>
+    /// A blank value means "not set" (the app falls back to its own default). Otherwise the folder
+    /// must already exist, so a typo or a wrong drive is caught before the settings are saved.
+    /// </summary>
+    private static bool TryValidateDirectory(string? value, string label, out string? error)
+    {
+        string path = (value ?? string.Empty).Trim();
+        if (path.Length == 0)
+        {
+            error = null;
+            return true;
+        }
+        if (File.Exists(path))
+        {
+            error = $"The {label} path is a file, not a folder:\n\n{path}";
+            return false;
+        }
+        if (!Directory.Exists(path))
+        {
+            error = $"The {label} folder does not exist:\n\n{path}\n\nChoose an existing folder with Browse...";
+            return false;
+        }
+        error = null;
+        return true;
+    }
+
+    private void txtWorkspace_TextChanged(object? sender, EventArgs e) => UpdatePathFreeSpace();
+
+    /// <summary>
+    /// Shows the free space of the chosen workspace drive (as text under the field), so a folder on a
+    /// nearly full drive - the "C: is full" case - is visible before a long build or conversion fails
+    /// for lack of space. A blank or non-existent folder shows nothing.
+    /// </summary>
+    private void UpdatePathFreeSpace()
+    {
+        lblWorkspaceFree.Text = FreeSpaceText(txtWorkspace.Text);
+    }
+
+    private static string FreeSpaceText(string? path)
+    {
+        string value = (path ?? string.Empty).Trim();
+        if (value.Length == 0 || !Directory.Exists(value)) return string.Empty;
+        try
+        {
+            string? root = Path.GetPathRoot(Path.GetFullPath(value));
+            if (string.IsNullOrEmpty(root)) return string.Empty;
+            var drive = new DriveInfo(root);
+            if (!drive.IsReady) return string.Empty;
+            return $"{drive.Name} {FormatBytes(drive.AvailableFreeSpace)} free";
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string FormatBytes(long value)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        double amount = Math.Max(0, value);
+        int unit = 0;
+        while (amount >= 1024 && unit < units.Length - 1) { amount /= 1024; unit++; }
+        return $"{amount:0.##} {units[unit]}";
     }
 
     // ---------------------------------------------------------------- theme / density
@@ -231,8 +313,9 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
 
     private void UpdateSaveEnabled()
     {
-        if (_loading || btnSave is null) return;
-        btnSave.Enabled = !string.Equals(Signature(), _initialSignature, StringComparison.Ordinal);
+        // Save stays enabled: it is the only way to apply edits, and disabling it while the form was
+        // untouched made the dialog look like it was still loading. Re-saving is harmless.
+        if (btnSave is not null) btnSave.Enabled = true;
     }
 
     // ---------------------------------------------------------------- library lists
