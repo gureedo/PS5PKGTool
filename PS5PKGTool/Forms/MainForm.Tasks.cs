@@ -541,9 +541,9 @@ public partial class MainForm
         if (SelectedTask() is not { } task) return;
         string report = BuildTaskReport(task);
         CopyText(report);
-        AppDialog.ShowInformation(
-            "The full task diagnostic was copied to the clipboard. Use Export Report... to save it.\n\n" +
-            report[..Math.Min(report.Length, 1200)], "Task diagnostic");
+        // Show the whole report in a scrollable window; the clipboard copy is a convenience, not the
+        // only way to read it. Export Report... still saves it to disk.
+        ShowTextReport("Task diagnostic", report);
     }
 
     private static double TaskPercent(QueuedPackageTask task) => task.Status == PackageTaskStatus.Completed
@@ -1005,17 +1005,19 @@ public partial class MainForm
             return null;
         bool overwrite = GetBool(fields, "overwrite");
         bool fromPackage = GetBool(fields, "package");
+        string workspaceText = Get(fields, "workspace");
+        string? workspace = workspaceText.Length > 0 ? workspaceText : null;
         return async (progress, token) =>
         {
             var bridge = new Progress<Ps5ImageConversionProgress>(value =>
                 progress.Report(new PackageTaskProgress(value.Stage, 0, 0, value.Completed, value.Total, 0, 0,
                     string.Empty)));
             if (fromPackage)
-                await SonyPackageImageConversion.ConvertAsync(source, output, target, overwrite, bridge, token)
-                    .ConfigureAwait(false);
+                await SonyPackageImageConversion.ConvertAsync(source, output, target, overwrite, bridge, token,
+                    tempDirectory: workspace).ConfigureAwait(false);
             else
-                await Ps5ImageConversionService.ConvertAsync(source, output, target, overwrite, bridge, token)
-                    .ConfigureAwait(false);
+                await Ps5ImageConversionService.ConvertAsync(source, output, target, overwrite, bridge, token,
+                    tempDirectory: workspace).ConfigureAwait(false);
         };
     }
 
