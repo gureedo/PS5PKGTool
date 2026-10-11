@@ -27,6 +27,17 @@ Suggestions are welcome. Report bugs [here](https://github.com/pearlxcore/PS5Pkg
 
 The release build is self-contained and includes the .NET runtime, so nothing else needs to be installed.
 
+# Building from source
+
+Building from source also needs the [DarkUI](https://github.com/pearlxcore/DarkUI) project. Clone it next to this repository (same parent folder, folder named `DarkUI`) so the project reference resolves:
+
+```
+git clone https://github.com/pearlxcore/DarkUI
+git clone https://github.com/pearlxcore/PS5PKGTool
+```
+
+Then build with the .NET 10 SDK.
+
 # Features
 
 **Library Management**
