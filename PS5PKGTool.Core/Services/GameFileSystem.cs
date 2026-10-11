@@ -188,7 +188,8 @@ public static class GameFileSystem
                 foreach (SonyPfsEntry file in package.NestedPfs.Files)
                 {
                     string path = NormalizePath(file.RelativePath);
-                    if (path.Length == 0 || file.Extents.Count == 0 || _segments.ContainsKey(path)) continue;
+                    if (path.Length == 0 || file.Extents.Count == 0 || _segments.ContainsKey(path) ||
+                        IsPfsInternalTable(path)) continue;
                     _segments[path] = file.Extents.Select(extent => new Segment(
                         checked((long)package.PfsImageOffset + extent.Offset), extent.Length,
                         package.NestedPfs.BlockSize == 0 ? 0 : checked((int)(extent.Offset / package.NestedPfs.BlockSize)),
@@ -201,7 +202,7 @@ public static class GameFileSystem
                 foreach (SonyPkgEntry entry in package.Entries.Where(entry => !entry.IsEncrypted))
                 {
                     string path = NormalizePath(entry.DisplayName);
-                    if (path.Length == 0 || _segments.ContainsKey(path)) continue;
+                    if (path.Length == 0 || _segments.ContainsKey(path) || IsPfsInternalTable(path)) continue;
                     _segments[path] = [new Segment(checked((long)package.EmbeddedCntOffset + entry.DataOffset), entry.DataSize)];
                 }
             }

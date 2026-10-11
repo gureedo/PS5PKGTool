@@ -255,6 +255,156 @@ public static class FfpfscImage
         };
     }
 
+    /// <summary>
+    /// A plain Sony PFS image whose user root holds a file tree (rather than a single packed
+    /// payload). Used when an FFPFSC container's inner payload is itself a PFS filesystem, so the
+    /// game tree (sce_sys/param.json, eboot.bin, ...) can be listed and read like a normal image.
+    /// </summary>
+    public sealed class PlainPfs
+    {
+        private readonly Stream _source;
+        private readonly bool _leaveOpen;
+        private readonly int _blockSize;
+        private readonly List<PfsInode> _inodes;
+        private readonly Dictionary<string, PfsInode> _files = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<FfpfscVolumeEntry> _entries = [];
+        private bool _disposed;
+
+        private PlainPfs(Stream source, bool leaveOpen, int blockSize, List<PfsInode> inodes)
+        {
+            _source = source;
+            _leaveOpen = leaveOpen;
+            _blockSize = blockSize;
+            _inodes = inodes;
+            if (inodes.Count > 2) Walk(inodes[2], string.Empty, 0);
+        }
+
+        public IReadOnlyList<FfpfscVolumeEntry> Entries => _entries;
+
+        /// <summary>Returns a reader when the stream is a plain PFS filesystem, otherwise null.</summary>
+        public static PlainPfs? TryCreate(Stream source, bool leaveOpen)
+        {
+            try
+            {
+                if (!source.CanRead || !source.CanSeek || source.Length < 0x1000) return null;
+                byte[] h = ReadAt(source, 0, 0x50);
+                long version = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x00, 8));
+                long magic = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x08, 8));
+                int mode = BinaryPrimitives.ReadUInt16LittleEndian(h.AsSpan(0x1C, 2));
+                int blockSize = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(h.AsSpan(0x20, 4)));
+                long leadingBlocks = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x28, 8));
+                long inodeCount = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x30, 8));
+                long blockCount = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x38, 8));
+                long inodeBlockCount = BinaryPrimitives.ReadInt64LittleEndian(h.AsSpan(0x40, 8));
+                if (version != PfsVersion || magic != PfsMagic) return null;
+                if ((mode & ~PfsModeCaseInsensitive) != 0) return null;
+                if (blockSize is < 0x1000 or > 0x100000 || (blockSize & (blockSize - 1)) != 0) return null;
+                if (leadingBlocks != 1 || inodeBlockCount != 1) return null;
+                if (inodeCount < 3 || inodeCount > blockSize / InodeSize) return null;
+                if (blockCount <= 0 || blockCount > source.Length / blockSize) return null;
+                var inodes = new List<PfsInode>(checked((int)inodeCount));
+                for (int index = 0; index < inodeCount; index++)
+                    inodes.Add(ParseInode(ReadAt(source, checked(blockSize + (long)index * InodeSize), InodeSize)));
+                var volume = new PlainPfs(source, leaveOpen, blockSize, inodes);
+                return volume._entries.Count == 0 ? null : volume;
+            }
+            catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or IOException or
+                                           ArgumentException or OverflowException)
+            {
+                return null;
+            }
+        }
+
+        public bool Contains(string path) => _files.ContainsKey(Normalize(path));
+
+        public Stream OpenFile(string path)
+        {
+            if (!_files.TryGetValue(Normalize(path), out PfsInode inode))
+                throw new FileNotFoundException("The file was not found in the nested PFS image.", path);
+            return new PfsFileStream(_source, checked((long)inode.FirstBlock * _blockSize), inode.Size);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            if (!_leaveOpen) _source.Dispose();
+        }
+
+        private static string Normalize(string path) => path.Replace('\\', '/').Trim('/');
+
+        private void Walk(PfsInode directory, string prefix, int depth)
+        {
+            if (depth > 16) return;
+            foreach (PfsDirent entry in ReadDirectory(_source, directory, _blockSize))
+            {
+                if (entry.Type is DirentDot or DirentDotDot) continue;
+                if (entry.Inode >= _inodes.Count) continue;
+                PfsInode inode = _inodes[(int)entry.Inode];
+                string path = prefix.Length == 0 ? entry.Name : prefix + "/" + entry.Name;
+                if ((inode.Mode & InodeModeDirectory) != 0)
+                {
+                    _entries.Add(new FfpfscVolumeEntry(path, true, 0));
+                    Walk(inode, path, depth + 1);
+                }
+                else if ((inode.Mode & InodeModeFile) != 0)
+                {
+                    _entries.Add(new FfpfscVolumeEntry(path, false, inode.Size));
+                    _files[path] = inode;
+                }
+            }
+        }
+
+        private sealed class PfsFileStream : Stream
+        {
+            private readonly Stream _source;
+            private readonly long _start;
+            private long _position;
+
+            public PfsFileStream(Stream source, long start, long length)
+            {
+                _source = source;
+                _start = start;
+                Length = length;
+            }
+
+            public override bool CanRead => true;
+            public override bool CanSeek => true;
+            public override bool CanWrite => false;
+            public override long Length { get; }
+            public override long Position { get => _position; set => _position = value; }
+            public override void Flush() { }
+            public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+
+            public override int Read(Span<byte> buffer)
+            {
+                if (_position >= Length || buffer.Length == 0) return 0;
+                int wanted = checked((int)Math.Min(buffer.Length, Length - _position));
+                _source.Position = checked(_start + _position);
+                int read = _source.Read(buffer[..wanted]);
+                _position += read;
+                return read;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                long value = origin switch
+                {
+                    SeekOrigin.Begin => offset,
+                    SeekOrigin.Current => checked(_position + offset),
+                    SeekOrigin.End => checked(Length + offset),
+                    _ => throw new ArgumentOutOfRangeException(nameof(origin))
+                };
+                if (value < 0) throw new IOException("Cannot seek before the start of the file.");
+                _position = value;
+                return value;
+            }
+
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        }
+    }
+
     public static async Task ExtractAsync(string ffpfscPath, string outputPath,
         IProgress<FfpfscProgress>? progress = null, CancellationToken cancellationToken = default)
     {
@@ -386,7 +536,7 @@ public static class FfpfscImage
     private static async Task<int> ExtractVolumeToDirectoryAsync(FfpfscVolume volume, string root, bool overwrite,
         IProgress<FfpfscProgress>? progress, CancellationToken cancellationToken, int depth)
     {
-        if (volume.InnerFilesystemKind == FfpfscInnerFilesystemKind.Pfs)
+        if (volume.InnerFilesystemKind == FfpfscInnerFilesystemKind.Pfs && !volume.IsPlainTree)
         {
             if (depth >= MaximumUnwrapDepth)
                 throw new InvalidDataException("The FFPFSC image nests more than four container layers.");

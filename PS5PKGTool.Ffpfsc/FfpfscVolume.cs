@@ -24,6 +24,7 @@ public sealed class FfpfscVolume : IDisposable
     private readonly PfscReadStream _decoded;
     private readonly ExfatVolume? _exfat;
     private readonly Ufs2Volume? _ufs2;
+    private readonly FfpfscImage.PlainPfs? _plain;
     private readonly bool _leaveContainerOpen;
     private bool _disposed;
 
@@ -56,7 +57,13 @@ public sealed class FfpfscVolume : IDisposable
                     break;
                 case Ps5ImageFormat.Pfs:
                     InnerFilesystemKind = FfpfscInnerFilesystemKind.Pfs;
-                    Entries = [new FfpfscVolumeEntry(Info.InnerFileName, false, Info.LogicalLength)];
+                    // The payload is itself a PFS image. When its user root is a file tree (a scene
+                    // "compressed inner image") expose that tree; otherwise keep the single packed
+                    // payload entry so the recursive unwrap path still works.
+                    _plain = FfpfscImage.PlainPfs.TryCreate(_decoded, leaveOpen: true);
+                    Entries = _plain is not null
+                        ? _plain.Entries
+                        : [new FfpfscVolumeEntry(Info.InnerFileName, false, Info.LogicalLength)];
                     break;
                 case Ps5ImageFormat.Exfat:
                     _exfat = new ExfatVolume(_decoded, leaveOpen: true);
@@ -83,6 +90,9 @@ public sealed class FfpfscVolume : IDisposable
     public string Path { get; }
     public FfpfscInfo Info { get; }
     public FfpfscInnerFilesystemKind InnerFilesystemKind { get; }
+
+    /// <summary>True when the PFS payload exposes a plain file tree rather than a single packed payload.</summary>
+    public bool IsPlainTree => _plain is not null;
     public IReadOnlyList<FfpfscVolumeEntry> Entries { get; } = [];
     public ExfatVolume FileSystem => _exfat ?? throw new InvalidOperationException("The inner filesystem is not exFAT.");
 
@@ -109,6 +119,7 @@ public sealed class FfpfscVolume : IDisposable
 
     public Stream OpenFile(string path)
     {
+        if (_plain is not null) return _plain.OpenFile(path);
         if (_ufs2 is not null) return _ufs2.OpenFile(path);
         if (_exfat is not null) return _exfat.OpenFile(path);
         throw new InvalidOperationException(
@@ -133,6 +144,7 @@ public sealed class FfpfscVolume : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
+        _plain?.Dispose();
         _exfat?.Dispose();
         _ufs2?.Dispose();
         _decoded.Dispose();
