@@ -21,23 +21,6 @@ Suggestions are welcome. Report bugs [here](https://github.com/pearlxcore/PS5Pkg
 
 [![paypal](https://user-images.githubusercontent.com/36906814/102657760-39d1ce00-41b1-11eb-96fe-c10e2d9b3f39.png)](https://www.paypal.com/paypalme/pearlxcoree)
 
-# Requirement
-
-- Windows 10 or 11 (64-bit).
-
-The release build is self-contained and includes the .NET runtime, so nothing else needs to be installed.
-
-# Building from source
-
-Building from source also needs the [DarkUI](https://github.com/pearlxcore/DarkUI) project. Clone it next to this repository (same parent folder, folder named `DarkUI`) so the project reference resolves:
-
-```
-git clone https://github.com/pearlxcore/DarkUI
-git clone https://github.com/pearlxcore/PS5PKGTool
-```
-
-Then build with the .NET 10 SDK.
-
 # Features
 
 **Library Management**
@@ -116,6 +99,23 @@ your folders, sources, recent folders and saved views.
 6. Run. Free disk space is checked before the build starts, the package is written to the output path, and progress is shown stage by stage on the Tasks tab.
 
 > **Note:** ProsperoPkgTool is the app's own internal package builder, provided alongside LibProsperoPkg. It is still experimental - output has been validated on PC but not on jailbroken PS5 hardware. Keep originals and verify any produced package before relying on it.
+
+# Requirement
+
+- Windows 10 or 11 (64-bit).
+
+The release build is self-contained and includes the .NET runtime, so nothing else needs to be installed.
+
+# Building from source
+
+Building from source also needs the [DarkUI](https://github.com/pearlxcore/DarkUI) project. Clone it next to this repository (same parent folder, folder named `DarkUI`) so the project reference resolves:
+
+```
+git clone https://github.com/pearlxcore/DarkUI
+git clone https://github.com/pearlxcore/PS5PKGTool
+```
+
+Then build with the .NET 10 SDK.
 
 # Build
 
