@@ -64,6 +64,10 @@ partial class SettingsForm
     private DarkUI.Controls.DarkLabel lblOutputDir = null!;
     private DarkUI.Controls.DarkTextBox txtOutputDirectory = null!;
     private DarkUI.Controls.DarkButton btnBrowseOutput = null!;
+    private DarkUI.Controls.DarkLabel lblWorkspace = null!;
+    private DarkUI.Controls.DarkTextBox txtWorkspace = null!;
+    private DarkUI.Controls.DarkButton btnBrowseWorkspace = null!;
+    private DarkUI.Controls.DarkLabel lblWorkspaceHint = null!;
     private DarkUI.Controls.DarkLabel lblDefaultBackend = null!;
     private DarkUI.Controls.DarkComboBox cboDefaultBackend = null!;
     private DarkUI.Controls.DarkLabel lblPasscode = null!;
@@ -160,6 +164,10 @@ partial class SettingsForm
         lblOutputDir = new DarkUI.Controls.DarkLabel();
         txtOutputDirectory = new DarkUI.Controls.DarkTextBox();
         btnBrowseOutput = new DarkUI.Controls.DarkButton();
+        lblWorkspace = new DarkUI.Controls.DarkLabel();
+        txtWorkspace = new DarkUI.Controls.DarkTextBox();
+        btnBrowseWorkspace = new DarkUI.Controls.DarkButton();
+        lblWorkspaceHint = new DarkUI.Controls.DarkLabel();
         lblDefaultBackend = new DarkUI.Controls.DarkLabel();
         cboDefaultBackend = new DarkUI.Controls.DarkComboBox();
         lblPasscode = new DarkUI.Controls.DarkLabel();
@@ -686,6 +694,10 @@ partial class SettingsForm
         tabPaths.Controls.Add(lblOutputDir);
         tabPaths.Controls.Add(txtOutputDirectory);
         tabPaths.Controls.Add(btnBrowseOutput);
+        tabPaths.Controls.Add(lblWorkspace);
+        tabPaths.Controls.Add(txtWorkspace);
+        tabPaths.Controls.Add(btnBrowseWorkspace);
+        tabPaths.Controls.Add(lblWorkspaceHint);
         tabPaths.Controls.Add(lblDefaultBackend);
         tabPaths.Controls.Add(cboDefaultBackend);
         tabPaths.Controls.Add(lblPasscode);
@@ -732,64 +744,96 @@ partial class SettingsForm
         btnBrowseOutput.Text = "Browse...";
         btnBrowseOutput.Click += btnBrowseOutput_Click;
         // 
+        // lblWorkspace
+        // 
+        lblWorkspace.Location = new Point(16, 87);
+        lblWorkspace.Name = "lblWorkspace";
+        lblWorkspace.Size = new Size(170, 15);
+        lblWorkspace.TabIndex = 4;
+        lblWorkspace.Text = "Default workspace folder";
+        // 
+        // txtWorkspace
+        // 
+        txtWorkspace.Location = new Point(196, 83);
+        txtWorkspace.Name = "txtWorkspace";
+        txtWorkspace.Size = new Size(380, 23);
+        txtWorkspace.TabIndex = 5;
+        // 
+        // btnBrowseWorkspace
+        // 
+        btnBrowseWorkspace.Location = new Point(584, 82);
+        btnBrowseWorkspace.Name = "btnBrowseWorkspace";
+        btnBrowseWorkspace.Size = new Size(80, 26);
+        btnBrowseWorkspace.TabIndex = 6;
+        btnBrowseWorkspace.Text = "Browse...";
+        btnBrowseWorkspace.Click += btnBrowseWorkspace_Click;
+        // 
+        // lblWorkspaceHint
+        // 
+        lblWorkspaceHint.Location = new Point(196, 112);
+        lblWorkspaceHint.Name = "lblWorkspaceHint";
+        lblWorkspaceHint.Size = new Size(470, 15);
+        lblWorkspaceHint.TabIndex = 7;
+        lblWorkspaceHint.Text = "Scratch folder for image conversions and package builds. Blank uses the system temp folder.";
+        // 
         // lblDefaultBackend
         // 
-        lblDefaultBackend.Location = new Point(16, 87);
+        lblDefaultBackend.Location = new Point(16, 155);
         lblDefaultBackend.Name = "lblDefaultBackend";
         lblDefaultBackend.Size = new Size(170, 15);
-        lblDefaultBackend.TabIndex = 4;
+        lblDefaultBackend.TabIndex = 8;
         lblDefaultBackend.Text = "Default builder";
         // 
         // cboDefaultBackend
         // 
         cboDefaultBackend.DropDownStyle = ComboBoxStyle.DropDownList;
-        cboDefaultBackend.Location = new Point(196, 83);
+        cboDefaultBackend.Location = new Point(196, 151);
         cboDefaultBackend.Name = "cboDefaultBackend";
         cboDefaultBackend.Size = new Size(320, 23);
-        cboDefaultBackend.TabIndex = 5;
+        cboDefaultBackend.TabIndex = 9;
         // 
         // lblPasscode
         // 
-        lblPasscode.Location = new Point(16, 125);
+        lblPasscode.Location = new Point(16, 193);
         lblPasscode.Name = "lblPasscode";
         lblPasscode.Size = new Size(170, 15);
-        lblPasscode.TabIndex = 6;
+        lblPasscode.TabIndex = 10;
         lblPasscode.Text = "Default debug passcode";
         // 
         // txtDebugPasscode
         // 
-        txtDebugPasscode.Location = new Point(196, 121);
+        txtDebugPasscode.Location = new Point(196, 189);
         txtDebugPasscode.Name = "txtDebugPasscode";
         txtDebugPasscode.Size = new Size(280, 23);
-        txtDebugPasscode.TabIndex = 7;
+        txtDebugPasscode.TabIndex = 11;
         txtDebugPasscode.UseSystemPasswordChar = true;
         txtDebugPasscode.TextChanged += txtDebugPasscode_TextChanged;
         // 
         // chkShowPasscode
         // 
         chkShowPasscode.AutoSize = true;
-        chkShowPasscode.Location = new Point(486, 123);
+        chkShowPasscode.Location = new Point(486, 191);
         chkShowPasscode.Name = "chkShowPasscode";
         chkShowPasscode.Size = new Size(60, 19);
-        chkShowPasscode.TabIndex = 8;
+        chkShowPasscode.TabIndex = 12;
         chkShowPasscode.Text = "Show";
         chkShowPasscode.CheckedChanged += chkShowPasscode_CheckedChanged;
         // 
         // lblPasscodeHint
         // 
-        lblPasscodeHint.Location = new Point(196, 150);
+        lblPasscodeHint.Location = new Point(196, 218);
         lblPasscodeHint.Name = "lblPasscodeHint";
         lblPasscodeHint.Size = new Size(470, 30);
-        lblPasscodeHint.TabIndex = 9;
+        lblPasscodeHint.TabIndex = 13;
         lblPasscodeHint.Text = "Blank uses the default all-zero passcode. Otherwise exactly 32 printable ASCII characters.";
         // 
         // chkOpenOutputAfterTask
         // 
         chkOpenOutputAfterTask.AutoSize = true;
-        chkOpenOutputAfterTask.Location = new Point(16, 192);
+        chkOpenOutputAfterTask.Location = new Point(16, 260);
         chkOpenOutputAfterTask.Name = "chkOpenOutputAfterTask";
         chkOpenOutputAfterTask.Size = new Size(400, 19);
-        chkOpenOutputAfterTask.TabIndex = 10;
+        chkOpenOutputAfterTask.TabIndex = 14;
         chkOpenOutputAfterTask.Text = "Open the output folder after a task succeeds";
         // 
         // lblOutputNotice

@@ -11,23 +11,22 @@ namespace PS5PKGTool.Core.Services;
 /// </summary>
 public static class SonyPackageImageConversion
 {
-    // Inner-PFS system tables synthesized by the assembler, plus the debug markers the builder
-    // injects, are not part of a normal dump and must not be re-emitted as regular files.
+    // The inner-PFS system tables are synthesized by the assembler and are not part of a normal
+    // dump (a scene/console exFAT does not carry them), so they must not be re-emitted as regular
+    // files. Everything else is real content and is kept, including sce_sys/keystone,
+    // sce_sys/about/right.sprx and sce_sys/pfs-version.dat, which a scene exFAT does contain.
     private static readonly HashSet<string> ExcludedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
         "inode_flat_path_table",
         "apr_flat_path_table",
-        "afid_to_ino_table",
-        "sce_sys/keystone",
-        "sce_sys/about/right.sprx",
-        "sce_sys/pfs-version.dat"
+        "afid_to_ino_table"
     };
 
     public static async Task<Ps5ImageConversionResult> ConvertAsync(string packagePath, string outputPath,
         Ps5ImageConversionTarget target, bool overwrite = false,
         IProgress<Ps5ImageConversionProgress>? progress = null, CancellationToken cancellationToken = default,
         ExfatBuildOptions? exfatOptions = null, FfpfscBuildOptions? ffpfscOptions = null,
-        FfpkgBuildOptions? ffpkgOptions = null)
+        FfpkgBuildOptions? ffpkgOptions = null, string? tempDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
@@ -41,8 +40,9 @@ public static class SonyPackageImageConversion
         if (string.Equals(packageFull, outputFull, StringComparison.OrdinalIgnoreCase))
             throw new IOException("The output path must be different from the source package.");
 
-        string tempRoot = Path.Combine(Path.GetTempPath(), "PS5PKGTool", "pkg-image",
-            Guid.NewGuid().ToString("N"));
+        string tempRoot = Path.Combine(
+            string.IsNullOrWhiteSpace(tempDirectory) ? Path.GetTempPath() : tempDirectory.Trim(),
+            "PS5PKGTool", "pkg-image", Guid.NewGuid().ToString("N"));
         string tree = Path.Combine(tempRoot, "tree");
         try
         {

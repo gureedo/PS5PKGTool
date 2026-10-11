@@ -335,6 +335,9 @@ partial class MainForm
     private DarkUI.Controls.DarkCheckBox chkOutDebug = null!;
     private DarkUI.Controls.DarkLabel lblDbgPasscode = null!;
     private DarkUI.Controls.DarkTextBox txtDbgPasscode = null!;
+    private DarkUI.Controls.DarkLabel lblWsExfat = null!;
+    private DarkUI.Controls.DarkLabel lblWsFfpkg = null!;
+    private DarkUI.Controls.DarkLabel lblWsFfpfsc = null!;
     private DarkUI.Controls.DarkLabel lblImageCluster = null!;
     private DarkUI.Controls.DarkComboBox cboImageCluster = null!;
     private DarkUI.Controls.DarkLabel lblImageLevel = null!;
@@ -376,8 +379,6 @@ partial class MainForm
     private DarkUI.Controls.DarkComboBox cboImageBackend = null!;
     private DarkUI.Controls.DarkCheckBox chkImageAdvancedOptions = null!;
     private DarkUI.Controls.DarkLabel lblImageTemp = null!;
-    private DarkUI.Controls.DarkTextBox txtImageTemp = null!;
-    private DarkUI.Controls.DarkButton btnImageTempBrowse = null!;
     private SaveFileDialog imageSaveDialog = null!;
     private DarkUI.Controls.DarkStatusStrip statusMain = null!;
     private DarkUI.Controls.DarkToolStripStatusLabel statusLabel = null!;
@@ -647,6 +648,7 @@ partial class MainForm
         lblImageCluster = new DarkUI.Controls.DarkLabel();
         cboImageCluster = new DarkUI.Controls.DarkComboBox();
         chkImageAmpr = new DarkUI.Controls.DarkCheckBox();
+        lblWsExfat = new DarkUI.Controls.DarkLabel();
         tabTargetFfpkg = new DarkUI.Controls.DarkTabPage();
         lblOutFfpkg = new DarkUI.Controls.DarkLabel();
         txtOutFfpkg = new DarkUI.Controls.DarkTextBox();
@@ -660,6 +662,7 @@ partial class MainForm
         cboImageDensity = new DarkUI.Controls.DarkComboBox();
         lblImageMinFree = new DarkUI.Controls.DarkLabel();
         nudImageMinFree = new DarkUI.Controls.DarkNumericUpDown();
+        lblWsFfpkg = new DarkUI.Controls.DarkLabel();
         tabTargetFfpfsc = new DarkUI.Controls.DarkTabPage();
         lblOutFfpfsc = new DarkUI.Controls.DarkLabel();
         txtOutFfpfsc = new DarkUI.Controls.DarkTextBox();
@@ -669,6 +672,7 @@ partial class MainForm
         nudImageLevel = new DarkUI.Controls.DarkNumericUpDown();
         lblImageGain = new DarkUI.Controls.DarkLabel();
         nudImageGain = new DarkUI.Controls.DarkNumericUpDown();
+        lblWsFfpfsc = new DarkUI.Controls.DarkLabel();
         tabTargetDebug = new DarkUI.Controls.DarkTabPage();
         lblOutDebug = new DarkUI.Controls.DarkLabel();
         txtOutDebug = new DarkUI.Controls.DarkTextBox();
@@ -689,8 +693,6 @@ partial class MainForm
         lblImageKrakenThreads = new DarkUI.Controls.DarkLabel();
         nudImageKrakenThreads = new DarkUI.Controls.DarkNumericUpDown();
         lblImageTemp = new DarkUI.Controls.DarkLabel();
-        txtImageTemp = new DarkUI.Controls.DarkTextBox();
-        btnImageTempBrowse = new DarkUI.Controls.DarkButton();
         lblImageDrm = new DarkUI.Controls.DarkLabel();
         cboImageDrm = new DarkUI.Controls.DarkComboBox();
         lblImageBackend = new DarkUI.Controls.DarkLabel();
@@ -3522,6 +3524,7 @@ partial class MainForm
         tabTargetExfat.Controls.Add(lblImageCluster);
         tabTargetExfat.Controls.Add(cboImageCluster);
         tabTargetExfat.Controls.Add(chkImageAmpr);
+        tabTargetExfat.Controls.Add(lblWsExfat);
         tabTargetExfat.Location = new Point(4, 32);
         tabTargetExfat.Name = "tabTargetExfat";
         tabTargetExfat.Size = new Size(1342, 152);
@@ -3588,6 +3591,16 @@ partial class MainForm
         chkImageAmpr.TabIndex = 19;
         chkImageAmpr.Text = "Generate AMPR index";
         // 
+        // lblWsExfat
+        // 
+        lblWsExfat.AutoSize = false;
+        lblWsExfat.Location = new Point(217, 69);
+        lblWsExfat.Name = "lblWsExfat";
+        lblWsExfat.Size = new Size(756, 15);
+        lblWsExfat.TabIndex = 40;
+        lblWsExfat.Text = "Workspace: (set in Settings)";
+        lblWsExfat.TextAlign = ContentAlignment.MiddleLeft;
+        // 
         // tabTargetFfpkg
         // 
         tabTargetFfpkg.BackColor = Color.FromArgb(60, 63, 65);
@@ -3603,6 +3616,7 @@ partial class MainForm
         tabTargetFfpkg.Controls.Add(cboImageDensity);
         tabTargetFfpkg.Controls.Add(lblImageMinFree);
         tabTargetFfpkg.Controls.Add(nudImageMinFree);
+        tabTargetFfpkg.Controls.Add(lblWsFfpkg);
         tabTargetFfpkg.Location = new Point(4, 32);
         tabTargetFfpkg.Name = "tabTargetFfpkg";
         tabTargetFfpkg.Size = new Size(1342, 152);
@@ -3711,6 +3725,16 @@ partial class MainForm
         nudImageMinFree.Size = new Size(60, 23);
         nudImageMinFree.TabIndex = 31;
         // 
+        // lblWsFfpkg
+        // 
+        lblWsFfpkg.AutoSize = false;
+        lblWsFfpkg.Location = new Point(217, 69);
+        lblWsFfpkg.Name = "lblWsFfpkg";
+        lblWsFfpkg.Size = new Size(756, 15);
+        lblWsFfpkg.TabIndex = 43;
+        lblWsFfpkg.Text = "Workspace: (set in Settings)";
+        lblWsFfpkg.TextAlign = ContentAlignment.MiddleLeft;
+        // 
         // tabTargetFfpfsc
         // 
         tabTargetFfpfsc.BackColor = Color.FromArgb(60, 63, 65);
@@ -3722,6 +3746,7 @@ partial class MainForm
         tabTargetFfpfsc.Controls.Add(nudImageLevel);
         tabTargetFfpfsc.Controls.Add(lblImageGain);
         tabTargetFfpfsc.Controls.Add(nudImageGain);
+        tabTargetFfpfsc.Controls.Add(lblWsFfpfsc);
         tabTargetFfpfsc.Location = new Point(4, 32);
         tabTargetFfpfsc.Name = "tabTargetFfpfsc";
         tabTargetFfpfsc.Size = new Size(1342, 152);
@@ -3798,6 +3823,16 @@ partial class MainForm
         nudImageGain.TabIndex = 18;
         nudImageGain.Value = new decimal(new int[] { 1, 0, 0, 0 });
         // 
+        // lblWsFfpfsc
+        // 
+        lblWsFfpfsc.AutoSize = false;
+        lblWsFfpfsc.Location = new Point(217, 69);
+        lblWsFfpfsc.Name = "lblWsFfpfsc";
+        lblWsFfpfsc.Size = new Size(756, 15);
+        lblWsFfpfsc.TabIndex = 46;
+        lblWsFfpfsc.Text = "Workspace: (set in Settings)";
+        lblWsFfpfsc.TextAlign = ContentAlignment.MiddleLeft;
+        // 
         // tabTargetDebug
         // 
         tabTargetDebug.BackColor = Color.FromArgb(60, 63, 65);
@@ -3820,8 +3855,6 @@ partial class MainForm
         tabTargetDebug.Controls.Add(lblImageKrakenThreads);
         tabTargetDebug.Controls.Add(nudImageKrakenThreads);
         tabTargetDebug.Controls.Add(lblImageTemp);
-        tabTargetDebug.Controls.Add(txtImageTemp);
-        tabTargetDebug.Controls.Add(btnImageTempBrowse);
         tabTargetDebug.Controls.Add(lblImageDrm);
         tabTargetDebug.Controls.Add(cboImageDrm);
         tabTargetDebug.Controls.Add(lblImageBackend);
@@ -4009,30 +4042,13 @@ partial class MainForm
         // lblImageTemp
         // 
         lblImageTemp.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        lblImageTemp.AutoSize = false;
         lblImageTemp.Location = new Point(217, 129);
         lblImageTemp.Name = "lblImageTemp";
-        lblImageTemp.Size = new Size(100, 15);
+        lblImageTemp.Size = new Size(756, 15);
         lblImageTemp.TabIndex = 52;
-        lblImageTemp.Text = "Workspace:";
-        lblImageTemp.TextAlign = ContentAlignment.MiddleRight;
-        // 
-        // txtImageTemp
-        // 
-        txtImageTemp.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        txtImageTemp.Location = new Point(325, 125);
-        txtImageTemp.Name = "txtImageTemp";
-        txtImageTemp.Size = new Size(288, 23);
-        txtImageTemp.TabIndex = 53;
-        // 
-        // btnImageTempBrowse
-        // 
-        btnImageTempBrowse.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        btnImageTempBrowse.Location = new Point(619, 124);
-        btnImageTempBrowse.Name = "btnImageTempBrowse";
-        btnImageTempBrowse.Size = new Size(80, 24);
-        btnImageTempBrowse.TabIndex = 54;
-        btnImageTempBrowse.Text = "Browse...";
-        btnImageTempBrowse.Click += btnImageTempBrowse_Click;
+        lblImageTemp.Text = "Workspace: (set in Settings)";
+        lblImageTemp.TextAlign = ContentAlignment.MiddleLeft;
         // 
         // lblImageDrm
         // 

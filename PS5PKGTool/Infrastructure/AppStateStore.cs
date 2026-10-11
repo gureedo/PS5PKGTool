@@ -63,6 +63,8 @@ public sealed class AppSettings
 
     // Paths & outputs
     public string OutputDirectory { get; set; } = string.Empty;
+    /// <summary>Temporary staging folder used by image conversions and package builds. Blank means the system temp folder.</summary>
+    public string WorkspaceDirectory { get; set; } = string.Empty;
     public bool OpenOutputAfterTask { get; set; }
 
     // Tasks workspace

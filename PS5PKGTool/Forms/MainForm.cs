@@ -31,6 +31,10 @@ public partial class MainForm : DarkForm
     private readonly Dictionary<string, long> _directorySizes = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _populatedDetailTabs = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Image> _trophyImages = [];
+    // Upper bound on rows materialized into the file list at once; a very large directory or a broad
+    // search would otherwise block the UI while every row is created. The remainder is reported in
+    // the summary. Rows are sorted after the cap, so the shown set is a sample, not necessarily the first.
+    private const int MaxFileListRows = 20000;
     private Ps5GameDetails? _currentDetails;
     private Ps5Artwork? _currentArtwork;
     private Ps5UdsSummary? _udsSummary;
@@ -40,6 +44,7 @@ public partial class MainForm : DarkForm
     private int _fileSortColumn;
     private bool _fileSortAscending = true;
     private string _currentDetailsRoot = string.Empty;
+    private string _filesSummaryBase = string.Empty;
     private AppSettings _settings = new();
     private string? _settingsWarning;
     private List<Ps5GameInfo> _games = [];
@@ -579,6 +584,7 @@ public partial class MainForm : DarkForm
                              || !previous.LibraryHiddenColumns.SequenceEqual(form.Settings.LibraryHiddenColumns)
                              || !previous.LibrarySortKeys.SequenceEqual(form.Settings.LibrarySortKeys);
         _settings = form.Settings;
+        UpdateWorkspaceLabels();
         ApplyRuntimeSettings();
         ApplyDefaultGrouping();
         SyncFilterControls();
@@ -2000,7 +2006,7 @@ public partial class MainForm : DarkForm
         root.Expand();
         treeFiles.EndUpdate();
         treeFiles.SelectedNode = root;
-        lblFilesSummary.Text = game.SourceKind switch
+        _filesSummaryBase = game.SourceKind switch
         {
             Ps5SourceKind.SonyPackage => game.Package?.NestedPfs?.AccessState == SonyPfsAccessState.PlaintextIndexed
                 ? $"{inventory.FileCount:N0} files - {FormatBytes(inventory.TotalSize)} content - inner PFS files with readable CNT metadata merged"
@@ -2018,6 +2024,7 @@ public partial class MainForm : DarkForm
                 $"{inventory.FileCount:N0} files - {FormatBytes(inventory.TotalSize)} logical content - read directly from the FFPKG",
             _ => $"{inventory.FileCount:N0} files - {FormatBytes(inventory.TotalSize)} total - double-click folders to browse or files to reveal them"
         };
+        lblFilesSummary.Text = _filesSummaryBase;
         RefreshFileList();
     }
 
@@ -2044,6 +2051,7 @@ public partial class MainForm : DarkForm
         string directory = treeFiles.SelectedNode?.Tag as string ?? string.Empty;
         string filter = searchFileFilter.SearchText.Trim();
         var rows = new List<FileListRow>();
+        bool truncated = false;
 
         if (filter.Length == 0)
         {
@@ -2057,20 +2065,25 @@ public partial class MainForm : DarkForm
             foreach (string child in _directoryNodes.Keys.Where(path =>
                 path.Length > 0 && NormalizeDirectory(Path.GetDirectoryName(path)).Equals(directory, StringComparison.OrdinalIgnoreCase)))
             {
+                if (rows.Count >= MaxFileListRows) { truncated = true; break; }
                 long size = GetDirectorySize(child);
                 rows.Add(new FileListRow(Path.GetFileName(child), "Folder", child, FormatBytes(size), size,
                     new FileBrowserEntry(child, true), FileIconProvider.Folder, true));
             }
 
-            if (_filesByDirectory.TryGetValue(directory, out List<Ps5FileInfo>? files))
+            if (!truncated && _filesByDirectory.TryGetValue(directory, out List<Ps5FileInfo>? files))
                 foreach (Ps5FileInfo file in files)
+                {
+                    if (rows.Count >= MaxFileListRows) { truncated = true; break; }
                     rows.Add(FileListRowFor(file));
+                }
         }
         else
         {
             // Recursive search: match folders and files anywhere in the tree.
             foreach (string child in _directoryNodes.Keys.Where(path => path.Length > 0))
             {
+                if (rows.Count >= MaxFileListRows) { truncated = true; break; }
                 string name = Path.GetFileName(child);
                 if (!MatchesFileFilter(name, child, filter)) continue;
                 long size = GetDirectorySize(child);
@@ -2078,10 +2091,17 @@ public partial class MainForm : DarkForm
                     new FileBrowserEntry(child, true), FileIconProvider.Folder, true));
             }
 
-            foreach (List<Ps5FileInfo> list in _filesByDirectory.Values)
-                foreach (Ps5FileInfo file in list)
-                    if (MatchesFileFilter(Path.GetFileName(file.RelativePath), file.RelativePath, filter))
-                        rows.Add(FileListRowFor(file));
+            if (!truncated)
+                foreach (List<Ps5FileInfo> list in _filesByDirectory.Values)
+                {
+                    if (truncated) break;
+                    foreach (Ps5FileInfo file in list)
+                    {
+                        if (rows.Count >= MaxFileListRows) { truncated = true; break; }
+                        if (MatchesFileFilter(Path.GetFileName(file.RelativePath), file.RelativePath, filter))
+                            rows.Add(FileListRowFor(file));
+                    }
+                }
         }
 
         rows.Sort(CompareFileRows);
@@ -2092,6 +2112,11 @@ public partial class MainForm : DarkForm
             AddFileListItem(row.Name, row.Type, row.Path, row.SizeText, row.Origin, row.Entry, row.Icon);
         listFiles.EndUpdate();
         listFiles.RefreshLayout();
+
+        if (_filesSummaryBase.Length > 0)
+            lblFilesSummary.Text = truncated
+                ? $"{_filesSummaryBase} - showing the first {rows.Count:N0} rows; refine the search or open a subfolder"
+                : _filesSummaryBase;
     }
 
     private static FileListRow FileListRowFor(Ps5FileInfo file)

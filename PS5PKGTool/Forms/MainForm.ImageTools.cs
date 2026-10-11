@@ -375,8 +375,6 @@ public partial class MainForm
         Show(lblImageKrakenThreads, advanced);
         Show(nudImageKrakenThreads, advanced);
         Show(lblImageTemp, advanced);
-        Show(txtImageTemp, advanced);
-        Show(btnImageTempBrowse, advanced);
         Show(chkImageDeterministic, advanced);
         Show(chkImageRightSprx, advanced);
 
@@ -438,6 +436,27 @@ public partial class MainForm
         ? txtDbgPasscode
         : txtImagePasscode;
 
+    // The workspace (temporary staging folder) is a single global setting, so a conversion or build
+    // can put its intermediate tree on a drive with room (issue #4). Blank means the system temp folder.
+    private string? ImageWorkspace()
+    {
+        string text = _settings.WorkspaceDirectory.Trim();
+        return text.Length == 0 ? null : text;
+    }
+
+    /// <summary>Refreshes the read-only workspace lines on the image target tabs from the setting.</summary>
+    private void UpdateWorkspaceLabels()
+    {
+        string text = _settings.WorkspaceDirectory.Trim();
+        string display = text.Length == 0
+            ? "Workspace: system temp folder  (set in Settings)"
+            : "Workspace: " + text + "  (set in Settings)";
+        lblWsExfat.Text = display;
+        lblWsFfpkg.Text = display;
+        lblWsFfpfsc.Text = display;
+        lblImageTemp.Text = display;
+    }
+
     private void SuggestImageOutput(string suffix)
     {
         TextBox box = ImageOutputBox();
@@ -481,16 +500,6 @@ public partial class MainForm
     }
 
 
-    private void btnImageTempBrowse_Click(object? sender, EventArgs e)
-    {
-        folderBrowserDialog.Description = "Select the temporary workspace folder";
-        if (!string.IsNullOrWhiteSpace(txtImageTemp.Text) && Directory.Exists(txtImageTemp.Text))
-            folderBrowserDialog.SelectedPath = txtImageTemp.Text;
-        if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
-            txtImageTemp.Text = folderBrowserDialog.SelectedPath;
-    }
-
-
     private void btnImageRun_Click(object? sender, EventArgs e)
     {
         if (_imageSourcePath is null) return;
@@ -531,6 +540,7 @@ public partial class MainForm
         }
         Ps5ImageConversionTarget target = MapTarget(toolTarget);
         bool overwrite = ImageOverwriteBox().Checked;
+        string? workspace = ImageWorkspace();
 
 
         ExfatBuildOptions? exfatOptions = target == Ps5ImageConversionTarget.Ffpkg
@@ -573,12 +583,13 @@ public partial class MainForm
             : "Queued: conversion. See the Tasks tab.";
         EnqueueTask(PackageTaskTypes.ImageConvert, $"Convert {Path.GetFileName(source)}",
             (progress, token) => ConvertImageAsync(source, output, target, overwrite, exfatOptions, ffpfscOptions,
-                ffpkgOptions, fromPackage, progress, token),
+                ffpkgOptions, fromPackage, workspace, progress, token),
             sourcePath: source, outputPath: output,
             operation: "Convert", sourceFormat: sourceRoute, targetFormat: targetRoute,
             stagePlan: fromPackage ? PackageTaskPlans.ConvertPackage : PackageTaskPlans.ConvertImage,
             payload: Payload(("source", source), ("output", output), ("target", target.ToString()),
-                ("overwrite", overwrite.ToString()), ("package", fromPackage.ToString())),
+                ("overwrite", overwrite.ToString()), ("package", fromPackage.ToString()),
+                ("workspace", workspace ?? string.Empty)),
             onFinished: task => lblImageStatus.Text = task.Status == PackageTaskStatus.Completed
                 ? $"Converted to {Path.GetFileName(output)}."
                 : $"Conversion {StatusText(task.Status).ToLowerInvariant()}.");
@@ -594,17 +605,17 @@ public partial class MainForm
 
     private static Task ConvertImageAsync(string source, string output, Ps5ImageConversionTarget target,
         bool overwrite, ExfatBuildOptions? exfatOptions, FfpfscBuildOptions? ffpfscOptions,
-        FfpkgBuildOptions? ffpkgOptions, bool fromPackage, IProgress<PackageTaskProgress> progress,
-        CancellationToken token)
+        FfpkgBuildOptions? ffpkgOptions, bool fromPackage, string? workspace,
+        IProgress<PackageTaskProgress> progress, CancellationToken token)
     {
         var bridge = new Progress<Ps5ImageConversionProgress>(value =>
             progress.Report(new PackageTaskProgress(value.Stage, 0, 0, value.Completed, value.Total, 0, 0,
                 string.Empty)));
         return fromPackage
             ? SonyPackageImageConversion.ConvertAsync(source, output, target, overwrite, bridge, token,
-                exfatOptions, ffpfscOptions, ffpkgOptions)
+                exfatOptions, ffpfscOptions, ffpkgOptions, workspace)
             : Ps5ImageConversionService.ConvertAsync(source, output, target, overwrite, bridge, token,
-                exfatOptions, ffpfscOptions, ffpkgOptions);
+                exfatOptions, ffpfscOptions, ffpkgOptions, workspace);
     }
 
     private void RunImageExtract()
@@ -920,8 +931,7 @@ public partial class MainForm
         cboImageDensity.SelectedIndex = 0;     // FFPKG: 256 KiB per inode
         nudImageMinFree.Value = 0;             // FFPKG: 0% reserved fragments
 
-        txtImageTemp.Text = Path.GetTempPath()
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        UpdateWorkspaceLabels();
     }
 
     /// <summary>Combo index of the backend id, falling back to the registry default.</summary>
@@ -1097,7 +1107,7 @@ public partial class MainForm
         string passcode = ImagePasscode();
         bool overwrite = ImageOverwriteBox().Checked;
         ulong? sdkVersionOverride = SelectedSdkOverride();
-        string? tempDirectory = string.IsNullOrWhiteSpace(txtImageTemp.Text) ? null : txtImageTemp.Text.Trim();
+        string? tempDirectory = ImageWorkspace();
         if (ImagePackageTypeUnsupported())
         {
             AppDialog.ShowWarning("AC (additional content) packages are not supported yet. Choose APP.", "Build package");
@@ -1235,10 +1245,11 @@ public partial class MainForm
                 if (space.Status == Ps5DiskSpaceStatus.NearLimit)
                     Logger.Info("Low free disk space for this image build. " + space.Message);
 
+                // The staging folder must NOT be pre-created: the extractors create the destination
+                // themselves and reject an existing one (see ExfatImage.ExtractDirectoryAsync).
                 staging = Path.Combine(
                     string.IsNullOrWhiteSpace(tempDirectory) ? Path.GetTempPath() : tempDirectory,
                     "PS5PKGTool-image-" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(staging);
                 Logger.Info("LibProsperoPkg: extracting " + Path.GetFileName(source) +
                     " to a staging workspace before the build...");
                 progress.Report(new PackageTaskProgress("Extract image", 0, 0, 0, rawBytes, 0, 0, Path.GetFileName(source)));

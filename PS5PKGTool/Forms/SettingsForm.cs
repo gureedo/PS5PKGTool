@@ -90,6 +90,7 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
             nudThumbnailCache.Value = Clamp(Settings.ThumbnailCacheCount, nudThumbnailCache);
 
             txtOutputDirectory.Text = Settings.OutputDirectory;
+            txtWorkspace.Text = Settings.WorkspaceDirectory;
             SelectBackend(Settings.BuildBackend);
             txtDebugPasscode.Text = Settings.DebugPasscode;
             chkOpenOutputAfterTask.Checked = Settings.OpenOutputAfterTask;
@@ -127,6 +128,8 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
 
         string output = txtOutputDirectory.Text.Trim();
         Settings.OutputDirectory = output.Length == 0 ? string.Empty : AppSettingsNormalizer.NormalizePath(output);
+        string workspace = txtWorkspace.Text.Trim();
+        Settings.WorkspaceDirectory = workspace.Length == 0 ? string.Empty : AppSettingsNormalizer.NormalizePath(workspace);
         Settings.BuildBackend = SelectedBackendId();
         Settings.DebugPasscode = txtDebugPasscode.Text;
         Settings.OpenOutputAfterTask = chkOpenOutputAfterTask.Checked;
@@ -358,6 +361,14 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
             txtOutputDirectory.Text = folderBrowserDialog.SelectedPath;
     }
 
+    private void btnBrowseWorkspace_Click(object? sender, EventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(txtWorkspace.Text) && Directory.Exists(txtWorkspace.Text))
+            folderBrowserDialog.SelectedPath = txtWorkspace.Text;
+        if (folderBrowserDialog.ShowDialog(this) == DialogResult.OK)
+            txtWorkspace.Text = folderBrowserDialog.SelectedPath;
+    }
+
     private void txtDebugPasscode_TextChanged(object? sender, EventArgs e)
     {
         if (_loading) return;
@@ -531,6 +542,7 @@ public partial class SettingsForm : DarkUI.Forms.DarkForm
         AppendChange(changes, "Hex page (KiB)", before.HexPageKb, after.HexPageKb);
         AppendChange(changes, "Thumbnail cache entries", before.ThumbnailCacheCount, after.ThumbnailCacheCount);
         AppendChange(changes, "Default output folder", before.OutputDirectory, after.OutputDirectory);
+        AppendChange(changes, "Default workspace folder", before.WorkspaceDirectory, after.WorkspaceDirectory);
         AppendChange(changes, "Default builder", before.BuildBackend, after.BuildBackend);
         AppendChange(changes, "Debug passcode", Mask(before.DebugPasscode), Mask(after.DebugPasscode));
         AppendChange(changes, "Open output after success", before.OpenOutputAfterTask, after.OpenOutputAfterTask);
