@@ -4953,6 +4953,7 @@ partial class MainForm
         // 
         packageOpenDialog.DefaultExt = "ffpfsc";
         packageOpenDialog.Filter = resources.GetString("packageOpenDialog.Filter");
+        packageOpenDialog.Multiselect = true;
         packageOpenDialog.Title = "Open a PS5 package or filesystem image";
         // 
         // sourceImageOpenDialog
