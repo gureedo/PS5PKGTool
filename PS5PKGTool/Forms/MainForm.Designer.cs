@@ -4945,6 +4945,10 @@ partial class MainForm
         statusCount.Size = new Size(51, 17);
         statusCount.Text = "0 games";
         // 
+        // folderBrowserDialog
+        // 
+        folderBrowserDialog.UseDescriptionForTitle = true;
+        // 
         // packageOpenDialog
         // 
         packageOpenDialog.DefaultExt = "ffpfsc";
